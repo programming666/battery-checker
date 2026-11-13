@@ -13,7 +13,7 @@ Windows 笔记本电池信息检测工具，基于 Qt6 + Windows API 直接读�
   - `简单检测`：也算做滚木
   - `普通检测`：查询当前电量百分比
   - `高级检测`：通过 `IOCTL_BATTERY_QUERY_TAG / QUERY_INFORMATION / QUERY_STATUS` 读取
-    设计容量、满充容量、当前容量（mWh）
+    设计容量、满充容量、当前容量（mWh）、**健康度**、**循环次数**
 ## 下载
 
 到 [Releases](../../releases) 下载 `Battery-Checker-win64.zip`，解压后双击 `Battery-Chker.exe` 即可，无需安装 Qt 运行时。

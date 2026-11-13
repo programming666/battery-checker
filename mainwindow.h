@@ -64,6 +64,7 @@ private:
     ULONG design_mwh = 0;
     ULONG full_mwh = 0;
     ULONG current_mwh = 0;
+    ULONG cycle_count = 0;
     int percent = 0;
 };
 #endif

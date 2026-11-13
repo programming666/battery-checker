@@ -141,6 +141,14 @@ void MainWindow::changeEvent(QEvent *event) {
 }
 
 void MainWindow::render_result() {
+    const int health = (design_mwh > 0 && full_mwh > 0)
+                       ? qRound(double(full_mwh) * 100.0 / double(design_mwh))
+                       : -1;
+    const QString health_text = health >= 0 ? QStringLiteral("%1%").arg(health)
+                                            : tr("未知");
+    const QString cycle_text = cycle_count > 0 ? QString::number(cycle_count)
+                                               : tr("未知");
+
     switch(result_state) {
     case ResultState::Empty:
         break;
@@ -153,28 +161,28 @@ void MainWindow::render_result() {
     case ResultState::Failed:
         ui->ChkRes->setText(tr("查询失败"));
         break;
-    case ResultState::OkAbsolute:
-        ui->ChkRes->setText(
-            tr("查询成功：\n"
-               "设计容量：%1 mWh\n"
-               "满充容量：%2 mWh\n"
-               "当前容量：%3 mWh")
-            .arg(design_mwh)
-            .arg(full_mwh)
-            .arg(current_mwh)
-        );
+    case ResultState::OkAbsolute: {
+        QStringList lines;
+        lines << tr("查询成功：");
+        lines << tr("设计容量：%1 mWh").arg(design_mwh);
+        lines << tr("满充容量：%1 mWh").arg(full_mwh);
+        lines << tr("当前容量：%1 mWh").arg(current_mwh);
+        lines << tr("健康度：%1").arg(health_text);
+        lines << tr("循环次数：%1").arg(cycle_text);
+        ui->ChkRes->setText(lines.join(QLatin1Char('\n')));
         break;
-    case ResultState::OkRelative:
-        ui->ChkRes->setText(
-            tr("查询成功（相对单位，无法换算为 mAh/mWh）：\n"
-               "设计容量：%1（相对值）\n"
-               "满充容量：%2（相对值）\n"
-               "当前容量：%3（相对值）")
-            .arg(design_mwh)
-            .arg(full_mwh)
-            .arg(current_mwh)
-        );
+    }
+    case ResultState::OkRelative: {
+        QStringList lines;
+        lines << tr("查询成功（相对单位，无法换算为 mAh/mWh）：");
+        lines << tr("设计容量：%1（相对值）").arg(design_mwh);
+        lines << tr("满充容量：%1（相对值）").arg(full_mwh);
+        lines << tr("当前容量：%1（相对值）").arg(current_mwh);
+        lines << tr("健康度：%1").arg(health_text);
+        lines << tr("循环次数：%1").arg(cycle_text);
+        ui->ChkRes->setText(lines.join(QLatin1Char('\n')));
         break;
+    }
     case ResultState::Percent:
         ui->ChkRes->setText(tr("当前电量：%1%").arg(percent));
         break;
@@ -223,6 +231,7 @@ void MainWindow::on_startbutton_clicked() {
     ULONG designMwh = 0;
     ULONG fullMwh = 0;
     ULONG currentMwh = 0;
+    ULONG cycleCount = 0;
     bool capacityRelative = false;
 
     HDEVINFO hinfo = SetupDiGetClassDevs(&GUID_DEVCLASS_BATTERY, 0, 0,
@@ -306,6 +315,7 @@ void MainWindow::on_startbutton_clicked() {
                     designMwh = bi.DesignedCapacity;
                     fullMwh   = bi.FullChargedCapacity;
 
+                    cycleCount = bi.CycleCount;
                     BATTERY_WAIT_STATUS bws = {0};
                     bws.BatteryTag = bqi.BatteryTag;
 
@@ -344,6 +354,7 @@ void MainWindow::on_startbutton_clicked() {
     design_mwh = designMwh;
     full_mwh = fullMwh;
     current_mwh = currentMwh;
+    cycle_count = cycleCount;
     result_state = capacityRelative ? ResultState::OkRelative
                                     : ResultState::OkAbsolute;
     render_result();
