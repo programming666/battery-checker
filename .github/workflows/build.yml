@@ -1,0 +1,107 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: 6.11.1
+  QT_ARCH: win64_mingw
+  QT_TOOLS: tools_mingw1310
+
+jobs:
+  windows:
+    name: windows-x64
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: windows
+          target: desktop
+          arch: ${{ env.QT_ARCH }}
+          tools: ${{ env.QT_TOOLS }}
+          cache: true
+
+      - name: Toolchain check
+        shell: bash
+        run: |
+          echo "QT_ROOT_DIR=$QT_ROOT_DIR"
+          which gcc g++ cmake ninja
+          g++ --version
+          "$QT_ROOT_DIR/bin/lrelease" -version
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake -S . -B build-min -G Ninja \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" \
+            -DCMAKE_C_COMPILER="$(which gcc)" \
+            -DCMAKE_CXX_COMPILER="$(which g++)"
+
+      - name: Build
+        shell: bash
+        run: cmake --build build-min
+
+      - name: Deploy
+        shell: cmd
+        run: |
+          set "QT_BIN=%QT_ROOT_DIR%\bin"
+          set "QT_PLUGINS=%QT_ROOT_DIR%\plugins"
+          call deploy-min.bat
+          if not exist "dist\Battery-Chker.exe" exit /b 1
+          if not exist "dist\platforms\qwindows.dll" exit /b 1
+
+      - name: Package
+        shell: cmd
+        run: |
+          cd dist
+          "%ProgramFiles%\7-Zip\7z.exe" a -tzip -mx=9 ..\Battery-Chker-win64.zip . -r
+          if errorlevel 1 exit /b 1
+          "%ProgramFiles%\7-Zip\7z.exe" a -t7z -mx=9 ..\Battery-Chker-win64.7z . -r
+          if errorlevel 1 exit /b 1
+          cd ..
+          "%ProgramFiles%\7-Zip\7z.exe" l Battery-Chker-win64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Battery-Chker-win64
+          path: |
+            Battery-Chker-win64.zip
+            Battery-Chker-win64.7z
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body: |
+            Windows 64 位免安装版，解压后双击 `Battery-Chker.exe` 即可运行，无需安装 Qt 运行时。
+
+            **包内容**：`Battery-Chker.exe`、`Qt6Core/Gui/Widgets.dll`、`platforms/qwindows.dll`、`styles/qmodernwindowsstyle.dll`、`imageformats/qico.dll`
+
+            由 GitHub Actions 在 `windows-latest` + Qt ${{ env.QT_VERSION }} (MinGW) 下自动构建。
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            Battery-Chker-win64.zip
+            Battery-Chker-win64.7z

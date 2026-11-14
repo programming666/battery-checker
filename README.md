@@ -1,4 +1,5 @@
 # Battery Checker · 电脑电量检测器
+[![build](https://github.com/programming666/battery-checker/actions/workflows/build.yml/badge.svg)](https://github.com/programming666/battery-checker/actions/workflows/build.yml)
 
 Windows 笔记本电池信息检测工具，基于 Qt6 + Windows API 直接读取电池的设计容量、满充容量与当前容量。
 
@@ -33,7 +34,23 @@ cmake --build build
 deploy-min.bat
 ```
 
-发布包会输出到 `dist/`。
+发布包会输出到 `dist/`。`deploy-min.bat` 里的 `QT_BIN` / `QT_PLUGINS` / `BUILD_DIR` / `DIST` 都支持用同名环境变量覆盖，默认值指向本机 `D:\Qt\6.11.1\mingw_64`。
+
+## 自动构建
+
+`.github/workflows/build.yml` 在 GitHub Actions 的 `windows-latest` 上复刻本地流程：
+
+| 触发 | 行为 |
+| --- | --- |
+| push 到 `main` / PR / 手动运行 | 安装 Qt 6.11.1 (MinGW 13.1) → `MinSizeRel` 编译 → 跑 `deploy-min.bat` → 打包 `zip` / `7z` → 上传 Artifact |
+| push 形如 `v*` 的 tag | 在上面基础上，自动创建该 tag 的 Release 并附上两个包 |
+
+发版只需：
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
 
 ## 命令行参数
 

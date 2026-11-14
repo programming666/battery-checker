@@ -2,10 +2,10 @@
 setlocal
 cd /d "%~dp0"
 
-set "QT_BIN=D:\Qt\6.11.1\mingw_64\bin"
-set "QT_PLUGINS=D:\Qt\6.11.1\mingw_64\plugins"
-set "BUILD_DIR=build-min"
-set "DIST=dist"
+if not defined QT_BIN set "QT_BIN=D:\Qt\6.11.1\mingw_64\bin"
+if not defined QT_PLUGINS set "QT_PLUGINS=D:\Qt\6.11.1\mingw_64\plugins"
+if not defined BUILD_DIR set "BUILD_DIR=build-min"
+if not defined DIST set "DIST=dist"
 
 if not exist "%BUILD_DIR%\Battery-Chker.exe" (
     echo [x] %BUILD_DIR%\Battery-Chker.exe not found, build it first:
