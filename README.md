@@ -42,8 +42,10 @@ deploy-min.bat
 
 | 触发 | 行为 |
 | --- | --- |
-| push 到 `main` / PR / 手动运行 | 安装 Qt 6.11.1 (MinGW 13.1) → `MinSizeRel` 编译 → 跑 `deploy-min.bat` → 打包 `zip` / `7z` → 上传 Artifact |
+| push 到 `main` / PR / 手动运行 | 安装 Qt 6.10.3 (MinGW 13.1) → `MinSizeRel` 编译 → 跑 `deploy-min.bat` → 打包 `zip` / `7z` → 上传 Artifact |
 | push 形如 `v*` 的 tag | 在上面基础上，自动创建该 tag 的 Release 并附上两个包 |
+
+> CI 用 Qt 6.10.3 而不是本地的 6.11.1：6.11 起官方仓库换成了按架构分目录的新布局，`aqtinstall`（`install-qt-action` 依赖）目前还只认旧布局。6.10.3 与 6.11.1 对本项目用到的 Qt6 API 没有差异。
 
 发版只需：
 
